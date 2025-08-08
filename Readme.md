@@ -31,12 +31,14 @@ python app.py
 Open your browser and go to:
 http://127.0.0.1:5000
 
-**AI Feature**
+##AI Feature
+---
 The app integrates Google Gemini AI (gemini-1.5-flash) model via the google-generativeai SDK.
 The AI interprets natural language search queries and filters products based on strict rules.
 If AI is unavailable or errors occur, the app falls back to a local rule-based search.
 
-**Tools and Libraries Used**
+##Tools and Libraries Used
+---
 Flask: Web framework for building the app.
 
 google-generativeai: Official SDK to interact with Google Gemini AI.
@@ -45,7 +47,8 @@ Python Standard Libraries: os, json, re for file handling and regex.
 
 Products Data: Stored in a JSON file (products.json) for simplicity.
 
-**Notable Assumptions**
+##Notable Assumptions
+---
 The products.json file contains product data with keys: name, category, price, rating, and description.
 
 The Gemini AI key is provided as an environment variable GEMINI_API_KEY.
