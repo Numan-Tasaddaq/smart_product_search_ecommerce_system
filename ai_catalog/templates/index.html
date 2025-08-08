@@ -1,0 +1,137 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>AI Product Catalog (Flask)</title>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+  <link rel="stylesheet" href="/static/style.css">
+</head>
+<body>
+<div class="container py-4">
+  <h1 class="mb-3">AI Product Catalog (Flask)</h1>
+
+  <div class="card mb-4 p-3">
+    <div class="row g-2">
+      <div class="col-md-6">
+        <input id="nlQuery" class="form-control" placeholder='Try: "Show me running shoes under $100 with good reviews' />
+      </div>
+      <div class="col-md-2">
+        <select id="categorySelect" class="form-select">
+          <option value="">All categories</option>
+          {% for c in categories %}
+          <option value="{{c}}">{{c}}</option>
+          {% endfor %}
+        </select>
+      </div>
+      <div class="col-md-2">
+        <input id="maxPrice" type="number" min="0" step="0.01" class="form-control" placeholder="Max price" />
+      </div>
+      <div class="col-md-2 d-flex align-items-center">
+        <div class="form-check me-3">
+          <input class="form-check-input" type="checkbox" id="useAI" checked>
+          <label class="form-check-label" for="useAI">Use AI</label>
+        </div>
+        <button id="searchBtn" class="btn btn-primary">Search</button>
+        <button id="resetBtn" class="btn btn-light ms-2">Reset</button>
+      </div>
+    </div>
+  </div>
+
+  <div id="resultsInfo" class="mb-2 text-muted"></div>
+
+  <div id="productGrid" class="row g-3"></div>
+
+  <footer class="mt-4 text-muted small">
+    <div>Smart search uses OpenAI if <code>OPENAI_API_KEY</code> is set on the server. Otherwise a local fallback is used.</div>
+  </footer>
+</div>
+
+<script>
+let products = [];
+
+async function loadProducts() {
+  const res = await fetch('/api/products');
+  products = await res.json();
+  renderProducts(products);
+}
+
+function renderProducts(list) {
+  const grid = document.getElementById('productGrid');
+  grid.innerHTML = '';
+  document.getElementById('resultsInfo').textContent = `${list.length} product(s) shown`;
+  if (list.length === 0) {
+    grid.innerHTML = '<div class="col-12"><div class="alert alert-warning">No products found</div></div>';
+    return;
+  }
+  list.forEach(p => {
+    const col = document.createElement('div');
+    col.className = 'col-sm-6 col-md-4 col-lg-3';
+    col.innerHTML = `
+      <div class="card h-100">
+        <div class="card-body d-flex flex-column">
+          <h5 class="card-title">${p.name}</h5>
+          <p class="card-text small mb-1">${p.description}</p>
+          <p class="mb-1"><strong>Category:</strong> ${p.category}</p>
+          <div class="mt-auto">
+            <p class="mb-1"><strong>€${Number(p.price).toFixed(2)}</strong></p>
+            <p class="text-muted small mb-0">Rating: ${p.rating}</p>
+          </div>
+        </div>
+      </div>`;
+    grid.appendChild(col);
+  });
+}
+
+function basicClientFilter(query, category, maxPrice) {
+  const q = (query || '').toLowerCase();
+  return products.filter(p => {
+    if (category && p.category !== category) return false;
+    if (maxPrice && Number(p.price) > Number(maxPrice)) return false;
+    if (!q) return true;
+    return (p.name + ' ' + p.description + ' ' + p.category).toLowerCase().includes(q);
+  });
+}
+
+document.getElementById('searchBtn').addEventListener('click', async () => {
+  const query = document.getElementById('nlQuery').value.trim();
+  const category = document.getElementById('categorySelect').value;
+  const maxPrice = document.getElementById('maxPrice').value;
+  const useAI = document.getElementById('useAI').checked;
+
+  // If AI is toggled, call backend smart_search
+  if (useAI && query) {
+    document.getElementById('resultsInfo').textContent = 'Searching with AI...';
+    try {
+      const resp = await fetch('/api/smart_search', {
+        method: 'POST',
+        headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify({query, category, max_price: maxPrice || null, use_ai: useAI})
+      });
+      const data = await resp.json();
+      renderProducts(data);
+      return;
+    } catch (err) {
+      console.error('AI search failed, falling back to client filter', err);
+      const client = basicClientFilter(query, category, maxPrice);
+      renderProducts(client);
+      return;
+    }
+  }
+
+  // Non-AI or empty query: client-side simple filter
+  const filtered = basicClientFilter(query, category, maxPrice);
+  renderProducts(filtered);
+});
+
+document.getElementById('resetBtn').addEventListener('click', () => {
+  document.getElementById('nlQuery').value = '';
+  document.getElementById('categorySelect').value = '';
+  document.getElementById('maxPrice').value = '';
+  renderProducts(products);
+});
+
+window.addEventListener('load', loadProducts);
+</script>
+</body>
+</html>
