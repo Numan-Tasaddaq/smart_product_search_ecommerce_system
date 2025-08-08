@@ -36,6 +36,8 @@ http://127.0.0.1:5000
 The app integrates Google Gemini AI (gemini-1.5-flash) model via the google-generativeai SDK.
 The AI interprets natural language search queries and filters products based on strict rules.
 If AI is unavailable or errors occur, the app falls back to a local rule-based search.
+**How this AI could be integrated with blockchain features?**
+This AI-powered product search can be integrated with blockchain by enabling token-gated pricing, where users holding specific tokens get access to exclusive discounts or products. On-chain user preferences can personalize search results securely and transparently, stored directly on the blockchain. Additionally, loyalty smart contracts could automatically reward repeat customers with tokens or benefits based on their purchase history and engagement tracked on-chain.
 
 **Tools and Libraries Used**
 ---
